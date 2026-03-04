@@ -159,9 +159,17 @@ public final class ClipboardHistoryService
       return;
     if (clip.equals(""))
       return;
+
+    // Remove if already exists to move to top
+    for (int i = 0; i < _history.size(); i++) {
+        if (_history.get(i).content.equals(clip)) {
+            _history.remove(i);
+            break;
+        }
+    }
     
-    String timestamp = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss", java.util.Locale.getDefault()).format(new java.util.Date());
-    _history.add(new HistoryEntry(clip, timestamp, description, version));
+    String timestamp = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss", java.util.Locale.getDefault()).format(new java.text.Date());
+    _history.add(0, new HistoryEntry(clip, timestamp, description, version));
     
     save_history_to_prefs(juloo.keyboard2.Config.globalConfig().getContext());
     if (_listener != null)

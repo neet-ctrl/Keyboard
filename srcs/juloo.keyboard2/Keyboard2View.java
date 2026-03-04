@@ -386,15 +386,19 @@ public class Keyboard2View extends View
   {
     updateHandles();
     Paint handlePaint = new Paint();
-    handlePaint.setColor(0x88888888);
-    canvas.drawRect(_topLeftHandle, handlePaint);
-    canvas.drawRect(_topRightHandle, handlePaint);
-    canvas.drawRect(_bottomLeftHandle, handlePaint);
-    canvas.drawRect(_bottomRightHandle, handlePaint);
-    canvas.drawRect(_topHandle, handlePaint);
-    canvas.drawRect(_bottomHandle, handlePaint);
-    canvas.drawRect(_leftHandle, handlePaint);
-    canvas.drawRect(_rightHandle, handlePaint);
+    handlePaint.setColor(0xAAFFFFFF);
+    handlePaint.setStyle(Paint.Style.STROKE);
+    handlePaint.setStrokeWidth(5f);
+    handlePaint.setStrokeCap(Paint.Cap.ROUND);
+
+    drawArrow(canvas, _topLeftHandle, 0, handlePaint);
+    drawArrow(canvas, _topRightHandle, 1, handlePaint);
+    drawArrow(canvas, _bottomLeftHandle, 2, handlePaint);
+    drawArrow(canvas, _bottomRightHandle, 3, handlePaint);
+    drawArrow(canvas, _topHandle, 4, handlePaint);
+    drawArrow(canvas, _bottomHandle, 5, handlePaint);
+    drawArrow(canvas, _leftHandle, 6, handlePaint);
+    drawArrow(canvas, _rightHandle, 7, handlePaint);
 
     float y = _tc.margin_top;
     for (KeyboardData.Row row : _keyboard.rows)
@@ -445,14 +449,40 @@ public class Keyboard2View extends View
   private void updateHandles() {
     float w = getWidth();
     float h = getHeight();
-    _topLeftHandle.set(0, 0, HANDLE_SIZE, HANDLE_SIZE);
-    _topRightHandle.set(w - HANDLE_SIZE, 0, w, HANDLE_SIZE);
-    _bottomLeftHandle.set(0, h - HANDLE_SIZE, HANDLE_SIZE, h);
-    _bottomRightHandle.set(w - HANDLE_SIZE, h - HANDLE_SIZE, w, h);
-    _topHandle.set(w/2 - HANDLE_SIZE/2, 0, w/2 + HANDLE_SIZE/2, HANDLE_SIZE);
-    _bottomHandle.set(w/2 - HANDLE_SIZE/2, h - HANDLE_SIZE, w/2 + HANDLE_SIZE/2, h);
-    _leftHandle.set(0, h/2 - HANDLE_SIZE/2, HANDLE_SIZE, h/2 + HANDLE_SIZE/2);
-    _rightHandle.set(w - HANDLE_SIZE, h/2 - HANDLE_SIZE/2, w, h/2 + HANDLE_SIZE/2);
+    float margin = 10f;
+    _topLeftHandle.set(margin, margin, HANDLE_SIZE + margin, HANDLE_SIZE + margin);
+    _topRightHandle.set(w - HANDLE_SIZE - margin, margin, w - margin, HANDLE_SIZE + margin);
+    _bottomLeftHandle.set(margin, h - HANDLE_SIZE - margin, HANDLE_SIZE + margin, h - margin);
+    _bottomRightHandle.set(w - HANDLE_SIZE - margin, h - HANDLE_SIZE - margin, w - margin, h - margin);
+    _topHandle.set(w/2 - HANDLE_SIZE/2, margin, w/2 + HANDLE_SIZE/2, HANDLE_SIZE + margin);
+    _bottomHandle.set(w/2 - HANDLE_SIZE/2, h - HANDLE_SIZE - margin, w/2 + HANDLE_SIZE/2, h - margin);
+    _leftHandle.set(margin, h/2 - HANDLE_SIZE/2, HANDLE_SIZE + margin, h/2 + HANDLE_SIZE/2);
+    _rightHandle.set(w - HANDLE_SIZE - margin, h/2 - HANDLE_SIZE/2, w - margin, h/2 + HANDLE_SIZE/2);
+  }
+
+  private void drawArrow(Canvas canvas, RectF rect, int direction, Paint paint) {
+    float cx = rect.centerX();
+    float cy = rect.centerY();
+    float size = rect.width() * 0.8f;
+    canvas.save();
+    canvas.translate(cx, cy);
+    // 0: TL, 1: TR, 2: BL, 3: BR, 4: T, 5: B, 6: L, 7: R
+    switch(direction) {
+        case 0: canvas.rotate(-45); break;
+        case 1: canvas.rotate(45); break;
+        case 2: canvas.rotate(-135); break;
+        case 3: canvas.rotate(135); break;
+        case 4: canvas.rotate(0); break;
+        case 5: canvas.rotate(180); break;
+        case 6: canvas.rotate(-90); break;
+        case 7: canvas.rotate(90); break;
+    }
+    float h = size / 2;
+    float w = size / 3;
+    canvas.drawLine(0, h, 0, -h, paint);
+    canvas.drawLine(0, -h, -w, -h + w, paint);
+    canvas.drawLine(0, -h, w, -h + w, paint);
+    canvas.restore();
   }
 
   private int getHandleAt(float x, float y) {
