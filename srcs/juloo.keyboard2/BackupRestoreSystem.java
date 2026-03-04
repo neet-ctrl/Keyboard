@@ -52,6 +52,18 @@ public class BackupRestoreSystem {
                 backup.put("clipboard", clipboardJson);
             }
 
+            // 3. Learned Words
+            java.io.File learnedFile = new java.io.File(context.getFilesDir(), "user_dictionary.txt");
+            if (learnedFile.exists()) {
+                org.json.JSONArray learnedJson = new org.json.JSONArray();
+                java.util.Scanner s = new java.util.Scanner(learnedFile);
+                while (s.hasNextLine()) {
+                    learnedJson.put(s.nextLine());
+                }
+                s.close();
+                backup.put("learned_words", learnedJson);
+            }
+
             return backup.toString();
         } catch (Exception e) {
             return null;
@@ -101,6 +113,17 @@ public class BackupRestoreSystem {
                         );
                     }
                 }
+            }
+
+            // 3. Restore Learned Words
+            if (backup.has("learned_words")) {
+                org.json.JSONArray learnedJson = backup.getJSONArray("learned_words");
+                java.io.File learnedFile = new java.io.File(context.getFilesDir(), "user_dictionary.txt");
+                java.io.FileWriter writer = new java.io.FileWriter(learnedFile, true); // Append mode
+                for (int i = 0; i < learnedJson.length(); i++) {
+                    writer.write(learnedJson.getString(i) + "\n");
+                }
+                writer.close();
             }
             return true;
         } catch (Exception e) {

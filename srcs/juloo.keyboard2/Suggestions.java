@@ -14,6 +14,11 @@ public final class Suggestions
     _callback = c;
   }
 
+  public List<String> getDictionary() {
+      if (dictionary == null) load_dictionary();
+      return dictionary;
+  }
+
   private List<String> dictionary = null;
 
   public void currently_typed_word(String word)

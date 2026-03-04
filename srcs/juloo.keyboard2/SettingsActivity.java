@@ -29,6 +29,22 @@ public class SettingsActivity extends PreferenceActivity
     catch (Exception _e) { fallbackEncrypted(); return; }
     addPreferencesFromResource(R.xml.settings);
 
+    findPreference("learned_words_list").setOnPreferenceClickListener(p -> {
+        Suggestions suggestions = new Suggestions(null);
+        java.util.List<String> words = suggestions.getDictionary();
+        android.app.AlertDialog.Builder builder = new android.app.AlertDialog.Builder(this);
+        builder.setTitle(R.string.pref_learned_words_title);
+        if (words == null || words.isEmpty()) {
+            builder.setMessage("No learned words yet.");
+        } else {
+            String[] wordsArray = words.toArray(new String[0]);
+            builder.setItems(wordsArray, null);
+        }
+        builder.setPositiveButton("OK", null);
+        builder.show();
+        return true;
+    });
+
     findPreference("backup_data").setOnPreferenceClickListener(p -> {
         String backup = BackupRestoreSystem.createBackup(this);
         if (backup != null) {

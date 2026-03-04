@@ -199,26 +199,60 @@ public class Keyboard2View extends View
   public boolean onTouch(View v, MotionEvent event)
   {
     int p;
+    float tx = event.getX();
+    float ty = event.getY();
+
     switch (event.getActionMasked())
     {
-      case MotionEvent.ACTION_UP:
-      case MotionEvent.ACTION_POINTER_UP:
-        _pointers.onTouchUp(event.getPointerId(event.getActionIndex()));
-        break;
       case MotionEvent.ACTION_DOWN:
-      case MotionEvent.ACTION_POINTER_DOWN:
+        _resizingHandle = getHandleAt(tx, ty);
+        if (_resizingHandle != -1) {
+            _isResizing = true;
+            _lastTouchX = tx;
+            _lastTouchY = ty;
+            return true;
+        }
         p = event.getActionIndex();
-        float tx = event.getX(p);
-        float ty = event.getY(p);
-        KeyboardData.Key key = getKeyAtPosition(tx, ty);
+        float x = event.getX(p);
+        float y = event.getY(p);
+        KeyboardData.Key key = getKeyAtPosition(x, y);
         if (key != null)
-          _pointers.onTouchDown(tx, ty, event.getPointerId(p), key);
+          _pointers.onTouchDown(x, y, event.getPointerId(p), key);
         break;
+
       case MotionEvent.ACTION_MOVE:
+        if (_isResizing) {
+            float dx = tx - _lastTouchX;
+            float dy = ty - _lastTouchY;
+            float newHeight = getHeight();
+            // Simple resize logic: only adjusting height for now as width is usually full screen
+            // In a real IME, we might adjust padding/margins in Config
+            if (_resizingHandle == 0 || _resizingHandle == 1 || _resizingHandle == 4) {
+                _config.marginTop = Math.max(0, _config.marginTop + dy);
+            } else if (_resizingHandle == 2 || _resizingHandle == 3 || _resizingHandle == 5) {
+                _config.margin_bottom = Math.max(0, _config.margin_bottom + dy);
+            }
+            _lastTouchX = tx;
+            _lastTouchY = ty;
+            requestLayout();
+            return true;
+        }
         for (p = 0; p < event.getPointerCount(); p++)
           _pointers.onTouchMove(event.getX(p), event.getY(p), event.getPointerId(p));
         break;
+
+      case MotionEvent.ACTION_UP:
+      case MotionEvent.ACTION_POINTER_UP:
+        if (_isResizing) {
+            _isResizing = false;
+            _resizingHandle = -1;
+            return true;
+        }
+        _pointers.onTouchUp(event.getPointerId(event.getActionIndex()));
+        break;
+
       case MotionEvent.ACTION_CANCEL:
+        _isResizing = false;
         _pointers.onTouchCancel();
         break;
       default:
@@ -349,6 +383,18 @@ public class Keyboard2View extends View
   @Override
   protected void onDraw(Canvas canvas)
   {
+    updateHandles();
+    Paint handlePaint = new Paint();
+    handlePaint.setColor(0x88888888);
+    canvas.drawRect(_topLeftHandle, handlePaint);
+    canvas.drawRect(_topRightHandle, handlePaint);
+    canvas.drawRect(_bottomLeftHandle, handlePaint);
+    canvas.drawRect(_bottomRightHandle, handlePaint);
+    canvas.drawRect(_topHandle, handlePaint);
+    canvas.drawRect(_bottomHandle, handlePaint);
+    canvas.drawRect(_leftHandle, handlePaint);
+    canvas.drawRect(_rightHandle, handlePaint);
+
     float y = _tc.margin_top;
     for (KeyboardData.Row row : _keyboard.rows)
     {
@@ -377,9 +423,47 @@ public class Keyboard2View extends View
   }
 
   @Override
-  public void onDetachedFromWindow()
+    public void onDetachedFromWindow()
   {
     super.onDetachedFromWindow();
+  }
+
+  private RectF _topLeftHandle = new RectF();
+  private RectF _topRightHandle = new RectF();
+  private RectF _bottomLeftHandle = new RectF();
+  private RectF _bottomRightHandle = new RectF();
+  private RectF _topHandle = new RectF();
+  private RectF _bottomHandle = new RectF();
+  private RectF _leftHandle = new RectF();
+  private RectF _rightHandle = new RectF();
+  private boolean _isResizing = false;
+  private int _resizingHandle = -1; // 0-7 for corners/sides
+  private float _lastTouchX, _lastTouchY;
+  private static final float HANDLE_SIZE = 40f;
+
+  private void updateHandles() {
+    float w = getWidth();
+    float h = getHeight();
+    _topLeftHandle.set(0, 0, HANDLE_SIZE, HANDLE_SIZE);
+    _topRightHandle.set(w - HANDLE_SIZE, 0, w, HANDLE_SIZE);
+    _bottomLeftHandle.set(0, h - HANDLE_SIZE, HANDLE_SIZE, h);
+    _bottomRightHandle.set(w - HANDLE_SIZE, h - HANDLE_SIZE, w, h);
+    _topHandle.set(w/2 - HANDLE_SIZE/2, 0, w/2 + HANDLE_SIZE/2, HANDLE_SIZE);
+    _bottomHandle.set(w/2 - HANDLE_SIZE/2, h - HANDLE_SIZE, w/2 + HANDLE_SIZE/2, h);
+    _leftHandle.set(0, h/2 - HANDLE_SIZE/2, HANDLE_SIZE, h/2 + HANDLE_SIZE/2);
+    _rightHandle.set(w - HANDLE_SIZE, h/2 - HANDLE_SIZE/2, w, h/2 + HANDLE_SIZE/2);
+  }
+
+  private int getHandleAt(float x, float y) {
+    if (_topLeftHandle.contains(x, y)) return 0;
+    if (_topRightHandle.contains(x, y)) return 1;
+    if (_bottomLeftHandle.contains(x, y)) return 2;
+    if (_bottomRightHandle.contains(x, y)) return 3;
+    if (_topHandle.contains(x, y)) return 4;
+    if (_bottomHandle.contains(x, y)) return 5;
+    if (_leftHandle.contains(x, y)) return 6;
+    if (_rightHandle.contains(x, y)) return 7;
+    return -1;
   }
 
   /** Draw borders and background of the key. */
