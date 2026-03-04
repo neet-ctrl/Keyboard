@@ -13,12 +13,18 @@ import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.ListView;
+import android.widget.ArrayAdapter;
+import java.util.List;
 import juloo.keyboard2.R;
+import juloo.keyboard2.ClipboardHistoryService;
 
 public class FloatingWidgetService extends Service {
     private WindowManager windowManager;
     private View floatingView;
     private WindowManager.LayoutParams params;
+    private View collapsedView;
+    private View expandedView;
 
     @Override
     public IBinder onBind(Intent intent) {
@@ -30,6 +36,9 @@ public class FloatingWidgetService extends Service {
         super.onCreate();
         floatingView = LayoutInflater.from(this).inflate(R.layout.layout_floating_widget, null);
 
+        collapsedView = floatingView.findViewById(R.id.collapse_view);
+        expandedView = floatingView.findViewById(R.id.expanded_container);
+
         int layoutFlag;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             layoutFlag = WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY;
@@ -37,55 +46,48 @@ public class FloatingWidgetService extends Service {
             layoutFlag = WindowManager.LayoutParams.TYPE_PHONE;
         }
 
+        windowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
+        android.util.DisplayMetrics metrics = new android.util.DisplayMetrics();
+        windowManager.getDefaultDisplay().getMetrics(metrics);
+        int screenWidth = metrics.widthPixels;
+        int screenHeight = metrics.heightPixels;
+
         params = new WindowManager.LayoutParams(
-                WindowManager.LayoutParams.WRAP_CONTENT,
+                screenWidth / 3,
                 WindowManager.LayoutParams.WRAP_CONTENT,
                 layoutFlag,
                 WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
                 PixelFormat.TRANSLUCENT);
 
-        params.gravity = Gravity.TOP | Gravity.LEFT;
+        params.gravity = Gravity.CENTER;
         params.x = 0;
-        params.y = 100;
+        params.y = 0;
 
-        windowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
         windowManager.addView(floatingView, params);
+
+        setupClipboardList();
 
         Button closeBtn = floatingView.findViewById(R.id.btn_close);
         if (closeBtn != null) {
             closeBtn.setOnClickListener(v -> stopSelf());
         }
 
-        ImageButton floatingBtn = floatingView.findViewById(R.id.btn_floating);
-        if (floatingBtn != null) {
-            floatingBtn.setVisibility(View.GONE);
-        }
-
-        ImageView resizeBtn = floatingView.findViewById(R.id.iv_resize);
-        if (resizeBtn != null) {
-            resizeBtn.setOnTouchListener(new View.OnTouchListener() {
-                private int initialX, initialY;
-                private int initialWidth, initialHeight;
-
-                @Override
-                public boolean onTouch(View v, MotionEvent event) {
-                    switch (event.getAction()) {
-                        case MotionEvent.ACTION_DOWN:
-                            initialX = (int) event.getRawX();
-                            initialY = (int) event.getRawY();
-                            initialWidth = params.width;
-                            initialHeight = params.height;
-                            return true;
-                        case MotionEvent.ACTION_MOVE:
-                            params.width = initialWidth + (int) (event.getRawX() - initialX);
-                            params.height = initialHeight + (int) (event.getRawY() - initialY);
-                            windowManager.updateViewLayout(floatingView, params);
-                            return true;
-                    }
-                    return false;
-                }
+        ImageView collapseBtn = floatingView.findViewById(R.id.iv_collapse);
+        if (collapseBtn != null) {
+            collapseBtn.setOnClickListener(v -> {
+                expandedView.setVisibility(View.GONE);
+                collapsedView.setVisibility(View.VISIBLE);
+                params.width = WindowManager.LayoutParams.WRAP_CONTENT;
+                windowManager.updateViewLayout(floatingView, params);
             });
         }
+
+        collapsedView.setOnClickListener(v -> {
+            collapsedView.setVisibility(View.GONE);
+            expandedView.setVisibility(View.VISIBLE);
+            params.width = screenWidth / 3;
+            windowManager.updateViewLayout(floatingView, params);
+        });
 
         floatingView.setOnTouchListener(new View.OnTouchListener() {
             private int initialX, initialY;
@@ -109,6 +111,19 @@ public class FloatingWidgetService extends Service {
                 return false;
             }
         });
+    }
+
+    private void setupClipboardList() {
+        ListView listView = floatingView.findViewById(R.id.clip_list);
+        if (listView != null) {
+            List<String> clips = ClipboardHistoryService.getRecentClips(this, 50);
+            ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, clips);
+            listView.setAdapter(adapter);
+            listView.setOnItemClickListener((parent, view, position, id) -> {
+                String selected = clips.get(position);
+                ClipboardHistoryService.copyToClipboard(this, selected);
+            });
+        }
     }
 
     @Override

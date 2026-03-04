@@ -11,18 +11,25 @@
         android:layout_height="0dp"
         android:layout_weight="1"
         android:textSize="18sp"
-        android:scrollbars="vertical" />
+        android:padding="8dp"
+        android:background="#F0F0F0"
+        android:scrollbars="vertical"
+        android:fadeScrollbars="false"
+        android:scrollbarStyle="insideInset" />
 
     <EditText
         android:id="@+id/et_typing_area"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:hint="Type here..."
-        android:minLines="3" />
+        android:minLines="3"
+        android:layout_marginTop="16dp" />
 
     <Button
         android:id="@+id/btn_next"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Next Paragraph" />
+        android:text="Next Paragraph"
+        android:enabled="false"
+        android:layout_marginTop="8dp" />
 </LinearLayout>
