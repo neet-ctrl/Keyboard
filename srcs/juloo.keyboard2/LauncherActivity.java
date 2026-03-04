@@ -19,6 +19,8 @@ import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.os.Build;
+import android.provider.Settings;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -55,6 +57,14 @@ public class LauncherActivity extends Activity implements Handler.Callback
             Intent intent = new Intent(this, TypingMasterActivity.class);
             startActivity(intent);
         });
+    }
+
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+        if (!Settings.canDrawOverlays(this)) {
+            Intent intent = new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                    Uri.parse("package:" + getPackageName()));
+            startActivity(intent);
+        }
     }
   }
 
@@ -139,11 +149,3 @@ public class LauncherActivity extends Activity implements Handler.Callback
     }
   }
 }
-// Request SYSTEM_ALERT_WINDOW permission on start if missing
-import android.content.Intent;
-import android.net.Uri;
-import android.os.Build;
-import android.provider.Settings;
-import android.os.Bundle;
-
-// Helper to add permission request logic somewhere in an Activity or Application context
