@@ -97,19 +97,34 @@ public class FloatingWidgetService extends Service {
         View resizeHandle = floatingView.findViewById(R.id.iv_resize);
         if (resizeHandle != null) {
             resizeHandle.setOnTouchListener(new View.OnTouchListener() {
-                private int initialHeight;
-                private float initialTouchY;
+                private int initialWidth, initialHeight;
+                private float initialTouchX, initialTouchY;
 
                 @Override
                 public boolean onTouch(View v, MotionEvent event) {
                     switch (event.getAction()) {
                         case MotionEvent.ACTION_DOWN:
+                            initialWidth = params.width;
+                            if (initialWidth == WindowManager.LayoutParams.MATCH_PARENT) {
+                                initialWidth = floatingView.getWidth();
+                            }
                             initialHeight = params.height;
+                            initialTouchX = event.getRawX();
                             initialTouchY = event.getRawY();
                             return true;
                         case MotionEvent.ACTION_MOVE:
+                            params.width = initialWidth + (int) (event.getRawX() - initialTouchX);
                             params.height = initialHeight + (int) (event.getRawY() - initialTouchY);
+                            
+                            // Set minimum constraints
+                            if (params.width < 300) params.width = 300;
                             if (params.height < 200) params.height = 200;
+                            
+                            // Ensure it doesn't exceed screen width
+                            android.util.DisplayMetrics dm = new android.util.DisplayMetrics();
+                            windowManager.getDefaultDisplay().getMetrics(dm);
+                            if (params.width > dm.widthPixels) params.width = dm.widthPixels;
+                            
                             windowManager.updateViewLayout(floatingView, params);
                             return true;
                     }
