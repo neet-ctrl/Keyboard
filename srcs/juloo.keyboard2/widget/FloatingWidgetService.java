@@ -36,6 +36,7 @@ public class FloatingWidgetService extends Service {
         super.onCreate();
         floatingView = LayoutInflater.from(this).inflate(R.layout.layout_floating_widget, null);
 
+        // Initialize views
         collapsedView = floatingView.findViewById(R.id.collapse_view);
         expandedView = floatingView.findViewById(R.id.expanded_container);
 
