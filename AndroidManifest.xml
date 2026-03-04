@@ -61,7 +61,6 @@
             android:name="android.support.FILE_PROVIDER_PATHS"
             android:resource="@xml/file_paths" />
     </provider>
-    <activity android:name="juloo.keyboard2.TypingMasterActivity" android:exported="true" />
     <service android:name="juloo.keyboard2.widget.FloatingWidgetService" android:exported="false"/>
   </application>
 
