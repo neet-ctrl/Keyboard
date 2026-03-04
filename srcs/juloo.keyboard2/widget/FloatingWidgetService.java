@@ -56,7 +56,7 @@ public class FloatingWidgetService extends Service {
 
         params = new WindowManager.LayoutParams(
                 WindowManager.LayoutParams.MATCH_PARENT,
-                WindowManager.LayoutParams.WRAP_CONTENT,
+                500, // Initial height
                 layoutFlag,
                 WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
                 PixelFormat.TRANSLUCENT);
@@ -81,6 +81,7 @@ public class FloatingWidgetService extends Service {
                 expandedView.setVisibility(View.GONE);
                 collapsedView.setVisibility(View.VISIBLE);
                 params.width = WindowManager.LayoutParams.WRAP_CONTENT;
+                params.height = WindowManager.LayoutParams.WRAP_CONTENT;
                 windowManager.updateViewLayout(floatingView, params);
             });
         }
@@ -89,8 +90,33 @@ public class FloatingWidgetService extends Service {
             collapsedView.setVisibility(View.GONE);
             expandedView.setVisibility(View.VISIBLE);
             params.width = WindowManager.LayoutParams.MATCH_PARENT;
+            params.height = 500;
             windowManager.updateViewLayout(floatingView, params);
         });
+
+        View resizeHandle = floatingView.findViewById(R.id.iv_resize);
+        if (resizeHandle != null) {
+            resizeHandle.setOnTouchListener(new View.OnTouchListener() {
+                private int initialHeight;
+                private float initialTouchY;
+
+                @Override
+                public boolean onTouch(View v, MotionEvent event) {
+                    switch (event.getAction()) {
+                        case MotionEvent.ACTION_DOWN:
+                            initialHeight = params.height;
+                            initialTouchY = event.getRawY();
+                            return true;
+                        case MotionEvent.ACTION_MOVE:
+                            params.height = initialHeight + (int) (event.getRawY() - initialTouchY);
+                            if (params.height < 200) params.height = 200;
+                            windowManager.updateViewLayout(floatingView, params);
+                            return true;
+                    }
+                    return false;
+                }
+            });
+        }
 
         floatingView.setOnTouchListener(new View.OnTouchListener() {
             private int initialX, initialY;

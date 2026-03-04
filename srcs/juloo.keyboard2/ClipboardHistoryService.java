@@ -146,12 +146,8 @@ public final class ClipboardHistoryService
   }
 
   public synchronized void add_clip(String clip) {
-    // Check for duplicates
-    for (HistoryEntry ent : _history) {
-      if (ent.content.equals(clip)) return;
-    }
+    if (clip == null || clip.isEmpty()) return;
     add_clip_with_metadata(clip, "", "");
-    notifyWidget(juloo.keyboard2.Config.globalConfig().getContext());
   }
 
   public synchronized void add_clip_with_metadata(String clip, String description, String version) {
@@ -192,7 +188,6 @@ public final class ClipboardHistoryService
     ClipboardHistoryService service = get_service(context);
     if (service == null) return new java.util.ArrayList<>();
     List<String> history = service.clear_expired_and_get_history();
-    java.util.Collections.reverse(history); // Get most recent first
     if (history.size() > limit) {
       return new java.util.ArrayList<>(history.subList(0, limit));
     }

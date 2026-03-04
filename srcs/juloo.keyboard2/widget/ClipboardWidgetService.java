@@ -52,7 +52,6 @@ class ClipboardRemoteViewsFactory implements RemoteViewsService.RemoteViewsFacto
         ClipboardHistoryService service = ClipboardHistoryService.get_service(mContext);
         if (service != null) {
             List<ClipboardHistoryService.HistoryEntry> entries = service.get_history_entries();
-            java.util.Collections.reverse(entries); // Recent first
             if (position < entries.size()) {
                 entry = entries.get(position);
             }

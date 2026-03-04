@@ -63,9 +63,19 @@
         <ListView
             android:id="@+id/clip_list"
             android:layout_width="match_parent"
-            android:layout_height="220dp"
+            android:layout_height="0dp"
+            android:layout_weight="1"
             android:divider="@android:color/transparent"
             android:dividerHeight="8dp" />
+
+        <ImageView
+            android:id="@+id/iv_resize"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:layout_gravity="end|bottom"
+            android:src="@android:drawable/ic_menu_directions"
+            android:tint="#666666"
+            android:contentDescription="Resize" />
 
     </LinearLayout>
 </FrameLayout>
