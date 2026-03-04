@@ -168,7 +168,7 @@ public final class ClipboardHistoryService
         }
     }
     
-    String timestamp = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss", java.util.Locale.getDefault()).format(new java.text.Date());
+    String timestamp = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss", java.util.Locale.getDefault()).format(new java.util.Date());
     _history.add(0, new HistoryEntry(clip, timestamp, description, version));
     
     save_history_to_prefs(juloo.keyboard2.Config.globalConfig().getContext());
