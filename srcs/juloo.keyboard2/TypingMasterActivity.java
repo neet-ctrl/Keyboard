@@ -69,9 +69,13 @@ public class TypingMasterActivity extends Activity {
                 String currentText = s.toString();
                 String targetText = paragraphs[currentParagraphIndex];
 
-                if (currentText.isEmpty()) return;
+                if (currentText.isEmpty()) {
+                    loadParagraphWithSelection(0);
+                    return;
+                }
 
                 if (targetText.startsWith(currentText)) {
+                    loadParagraphWithSelection(currentText.length());
                     if (currentText.equals(targetText)) {
                         long endTime = System.currentTimeMillis();
                         long timeTaken = endTime - startTime;
@@ -98,8 +102,26 @@ public class TypingMasterActivity extends Activity {
     }
 
     private void loadParagraph() {
-        tvParagraph.setText(paragraphs[currentParagraphIndex]);
-        tvParagraph.scrollTo(0, 0);
+        loadParagraphWithSelection(0);
+    }
+
+    private void loadParagraphWithSelection(int index) {
+        String text = paragraphs[currentParagraphIndex];
+        android.text.SpannableString spannable = new android.text.SpannableString(text);
+        
+        // Highlight completed text
+        if (index > 0) {
+            spannable.setSpan(new android.text.style.ForegroundColorSpan(0xFF4CAF50), 0, index, android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+        }
+        
+        // Indication where the user is
+        if (index < text.length()) {
+            spannable.setSpan(new android.text.style.BackgroundColorSpan(0xFFBBDEFB), index, index + 1, android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+            spannable.setSpan(new android.text.style.StyleSpan(android.graphics.Typeface.BOLD), index, index + 1, android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+        }
+        
+        tvParagraph.setText(spannable);
+        if (index == 0) tvParagraph.scrollTo(0, 0);
     }
     
     @Override

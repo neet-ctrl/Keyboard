@@ -54,13 +54,14 @@ public class FloatingWidgetService extends Service {
         int screenHeight = metrics.heightPixels;
 
         params = new WindowManager.LayoutParams(
-                screenWidth / 3,
+                WindowManager.LayoutParams.MATCH_PARENT,
                 WindowManager.LayoutParams.WRAP_CONTENT,
                 layoutFlag,
                 WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
                 PixelFormat.TRANSLUCENT);
 
         params.gravity = Gravity.CENTER;
+        params.horizontalMargin = 0.05f; // Add some margin from edges
         params.x = 0;
         params.y = 0;
 
@@ -86,7 +87,7 @@ public class FloatingWidgetService extends Service {
         collapsedView.setOnClickListener(v -> {
             collapsedView.setVisibility(View.GONE);
             expandedView.setVisibility(View.VISIBLE);
-            params.width = screenWidth / 3;
+            params.width = WindowManager.LayoutParams.MATCH_PARENT;
             windowManager.updateViewLayout(floatingView, params);
         });
 
@@ -118,7 +119,28 @@ public class FloatingWidgetService extends Service {
         ListView listView = floatingView.findViewById(R.id.clip_list);
         if (listView != null) {
             List<String> clips = ClipboardHistoryService.getRecentClips(this, 50);
-            ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, clips);
+            ArrayAdapter<String> adapter = new ArrayAdapter<String>(this, R.layout.clipboard_widget_item, R.id.clip_text, clips) {
+                @Override
+                public View getView(int position, View convertView, android.view.ViewGroup parent) {
+                    View view = super.getView(position, convertView, parent);
+                    String item = getItem(position);
+                    
+                    // Distinct colors for different clips
+                    int[] colors = {0xFFE3F2FD, 0xFFF1F8E9, 0xFFFFF3E0, 0xFFF3E5F5, 0xFFE0F2F1};
+                    view.setBackgroundResource(R.drawable.bg_clip_item);
+                    view.getBackground().setTint(colors[position % colors.length]);
+                    
+                    TextView text = view.findViewById(R.id.clip_text);
+                    text.setText(item);
+                    text.setMaxLines(2);
+                    text.setEllipsize(android.text.TextUtils.TruncateAt.END);
+                    
+                    view.findViewById(R.id.btn_copy).setOnClickListener(v -> {
+                        ClipboardHistoryService.copyToClipboard(getContext(), item);
+                    });
+                    return view;
+                }
+            };
             listView.setAdapter(adapter);
             listView.setOnItemClickListener((parent, view, position, id) -> {
                 String selected = clips.get(position);
