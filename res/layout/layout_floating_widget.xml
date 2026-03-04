@@ -70,11 +70,13 @@
 
         <ImageView
             android:id="@+id/iv_resize"
-            android:layout_width="24dp"
-            android:layout_height="24dp"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
             android:layout_gravity="end|bottom"
             android:src="@android:drawable/ic_menu_directions"
-            android:tint="#666666"
+            android:padding="8dp"
+            android:background="#44000000"
+            android:tint="#FFFFFF"
             android:contentDescription="Resize" />
 
     </LinearLayout>

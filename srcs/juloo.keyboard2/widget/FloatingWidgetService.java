@@ -145,35 +145,49 @@ public class FloatingWidgetService extends Service {
     private void setupClipboardList() {
         ListView listView = floatingView.findViewById(R.id.clip_list);
         if (listView != null) {
-            List<String> clips = ClipboardHistoryService.getRecentClips(this, 50);
-            ArrayAdapter<String> adapter = new ArrayAdapter<String>(this, R.layout.clipboard_widget_item, R.id.clip_text, clips) {
-                @Override
-                public View getView(int position, View convertView, android.view.ViewGroup parent) {
-                    View view = super.getView(position, convertView, parent);
-                    String item = getItem(position);
-                    
-                    // Distinct colors for different clips
-                    int[] colors = {0xFFE3F2FD, 0xFFF1F8E9, 0xFFFFF3E0, 0xFFF3E5F5, 0xFFE0F2F1};
-                    view.setBackgroundResource(R.drawable.bg_clip_item);
-                    view.getBackground().setTint(colors[position % colors.length]);
-                    
-                    TextView text = view.findViewById(R.id.clip_text);
-                    text.setText(item);
-                    text.setMaxLines(2);
-                    text.setEllipsize(android.text.TextUtils.TruncateAt.END);
-                    
-                    view.findViewById(R.id.btn_copy).setOnClickListener(v -> {
-                        ClipboardHistoryService.copyToClipboard(getContext(), item);
-                    });
-                    return view;
-                }
-            };
-            listView.setAdapter(adapter);
-            listView.setOnItemClickListener((parent, view, position, id) -> {
-                String selected = clips.get(position);
-                ClipboardHistoryService.copyToClipboard(this, selected);
-            });
+            updateFloatingList();
+            ClipboardHistoryService service = ClipboardHistoryService.get_service(this);
+            if (service != null) {
+                service.set_on_clipboard_history_change(() -> {
+                    if (floatingView != null) {
+                        floatingView.post(() -> updateFloatingList());
+                    }
+                });
+            }
         }
+    }
+
+    private void updateFloatingList() {
+        ListView listView = floatingView.findViewById(R.id.clip_list);
+        if (listView == null) return;
+        
+        List<String> clips = ClipboardHistoryService.getRecentClips(this, 50);
+        ArrayAdapter<String> adapter = new ArrayAdapter<String>(this, R.layout.clipboard_widget_item, R.id.clip_text, clips) {
+            @Override
+            public View getView(int position, View convertView, android.view.ViewGroup parent) {
+                View view = super.getView(position, convertView, parent);
+                String item = getItem(position);
+                
+                int[] colors = {0xFFE3F2FD, 0xFFF1F8E9, 0xFFFFF3E0, 0xFFF3E5F5, 0xFFE0F2F1};
+                view.setBackgroundResource(R.drawable.bg_clip_item);
+                view.getBackground().setTint(colors[position % colors.length]);
+                
+                TextView text = view.findViewById(R.id.clip_text);
+                text.setText(item);
+                text.setMaxLines(2);
+                text.setEllipsize(android.text.TextUtils.TruncateAt.END);
+                
+                view.findViewById(R.id.btn_copy).setOnClickListener(v -> {
+                    ClipboardHistoryService.copyToClipboard(getContext(), item);
+                });
+                return view;
+            }
+        };
+        listView.setAdapter(adapter);
+        listView.setOnItemClickListener((parent, view, position, id) -> {
+            String selected = clips.get(position);
+            ClipboardHistoryService.copyToClipboard(this, selected);
+        });
     }
 
     @Override
