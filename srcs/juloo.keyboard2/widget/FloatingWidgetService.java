@@ -11,6 +11,7 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.Button;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import juloo.keyboard2.R;
 
@@ -53,6 +54,11 @@ public class FloatingWidgetService extends Service {
         Button closeBtn = floatingView.findViewById(R.id.btn_close);
         if (closeBtn != null) {
             closeBtn.setOnClickListener(v -> stopSelf());
+        }
+
+        ImageButton floatingBtn = floatingView.findViewById(R.id.btn_floating);
+        if (floatingBtn != null) {
+            floatingBtn.setVisibility(View.GONE);
         }
 
         ImageView resizeBtn = floatingView.findViewById(R.id.iv_resize);

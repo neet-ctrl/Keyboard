@@ -39,6 +39,11 @@ public class ClipboardWidgetProvider extends AppWidgetProvider {
             PendingIntent refreshPendingIntent = PendingIntent.getBroadcast(context, appWidgetId, refreshIntent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
             views.setOnClickPendingIntent(R.id.btn_refresh, refreshPendingIntent);
 
+            Intent floatingIntent = new Intent(context, FloatingWidgetService.class);
+            PendingIntent floatingPendingIntent = PendingIntent.getService(context, 0, floatingIntent, 
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+            views.setOnClickPendingIntent(R.id.btn_floating, floatingPendingIntent);
+
             appWidgetManager.updateAppWidget(appWidgetId, views);
         }
         super.onUpdate(context, appWidgetManager, appWidgetIds);
