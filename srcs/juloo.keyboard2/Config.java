@@ -27,8 +27,8 @@ public final class Config
   private final SharedPreferences _prefs;
 
   // From resources
-  public final float marginTop;
-  public final float keyPadding;
+  public float marginTop;
+  public float keyPadding;
 
   public final float labelTextSize;
   public final float sublabelTextSize;
@@ -62,6 +62,23 @@ public final class Config
   public float customBorderLineWidth; // dp
   public int keyOpacity; // 0 - 255
   public int keyActivatedOpacity; // 0 - 255
+
+  public void setMarginTop(float value) {
+      this.marginTop = value;
+  }
+
+  public void setMarginBottom(float value) {
+      this.margin_bottom = value;
+  }
+
+  public float getMarginBottom() {
+      return this.margin_bottom;
+  }
+
+  public float getMarginTop() {
+      return this.marginTop;
+  }
+
   public boolean double_tap_lock_shift;
   public float characterSize; // Ratio
   public int theme; // Values are R.style.*

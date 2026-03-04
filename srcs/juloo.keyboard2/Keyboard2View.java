@@ -228,13 +228,14 @@ public class Keyboard2View extends View
             // Simple resize logic: only adjusting height for now as width is usually full screen
             // In a real IME, we might adjust padding/margins in Config
             if (_resizingHandle == 0 || _resizingHandle == 1 || _resizingHandle == 4) {
-                _config.marginTop = Math.max(0, _config.marginTop + dy);
+                _config.setMarginTop(Math.max(0, _config.marginTop + dy));
             } else if (_resizingHandle == 2 || _resizingHandle == 3 || _resizingHandle == 5) {
-                _config.margin_bottom = Math.max(0, _config.margin_bottom + dy);
+                _config.setMarginBottom(Math.max(0, _config.margin_bottom + dy));
             }
             _lastTouchX = tx;
             _lastTouchY = ty;
             requestLayout();
+            invalidate();
             return true;
         }
         for (p = 0; p < event.getPointerCount(); p++)
