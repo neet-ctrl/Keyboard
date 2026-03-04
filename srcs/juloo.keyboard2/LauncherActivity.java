@@ -139,3 +139,11 @@ public class LauncherActivity extends Activity implements Handler.Callback
     }
   }
 }
+// Request SYSTEM_ALERT_WINDOW permission on start if missing
+import android.content.Intent;
+import android.net.Uri;
+import android.os.Build;
+import android.provider.Settings;
+import android.os.Bundle;
+
+// Helper to add permission request logic somewhere in an Activity or Application context

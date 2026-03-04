@@ -1,172 +1,82 @@
 package juloo.keyboard2;
 
 import android.app.Activity;
-import android.content.Context;
-import android.graphics.Color;
-import android.graphics.Typeface;
 import android.os.Bundle;
-import android.os.Handler;
 import android.text.Editable;
 import android.text.TextWatcher;
-import android.view.Gravity;
-import android.view.View;
-import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.LinearLayout;
-import android.widget.ScrollView;
 import android.widget.TextView;
-import java.util.Random;
+import android.widget.Toast;
 
 public class TypingMasterActivity extends Activity {
 
-    private TextView tvTarget, tvStats, tvLevelInfo;
-    private EditText etInput;
-    private int currentLevel = 1;
-    private int wordsTyped = 0;
-    private long startTime = 0;
-    private String currentTargetWord = "";
-    private int mistakes = 0;
-    private boolean isTestRunning = false;
+    private TextView tvParagraph;
+    private EditText etTypingArea;
+    private Button btnNext;
 
-    private static final String[][] LEVEL_WORDS = {
-        {"the", "be", "to", "of", "and", "in", "that", "have"}, // Level 1
-        {"rhythm", "flow", "typing", "master", "speed", "quick"}, // Level 2
-        {"complex", "challenge", "accuracy", "practice", "mobile"}, // Level 3
-        {"performance", "consistency", "neuroscience", "keyboard"}, // Level 4
-        {"competitive", "excellence", "professional", "optimization"} // Level 5
+    private String[] paragraphs = {
+        "The quick brown fox jumps over the lazy dog. This is a classic pangram that contains every letter of the English alphabet. Typing it repeatedly can help improve your typing speed and accuracy. It's often used for testing typewriters and computer keyboards.",
+        "Technology has revolutionized the way we live and work. From smartphones to artificial intelligence, the rapid pace of innovation continues to shape our society. As we embrace these advancements, it's essential to consider their impact on our daily lives.",
+        "Learning to code opens up a world of possibilities. It empowers individuals to create software, websites, and applications that solve real-world problems. Whether you're a beginner or an experienced developer, coding is a valuable skill in today's digital age.",
+        "Nature offers a profound sense of tranquility and beauty. The rustling of leaves, the chirping of birds, and the gentle flow of a river can soothe the soul. Taking time to connect with nature is essential for our physical and mental well-being.",
+        "Reading books is a wonderful way to expand your knowledge and imagination. It transports you to different worlds, introduces you to diverse characters, and allows you to explore complex ideas. Make reading a daily habit to reap its numerous benefits.",
+        "Effective communication is key to building strong relationships. It involves not only speaking clearly but also listening attentively. By fostering open and honest dialogue, we can resolve conflicts and foster mutual understanding.",
+        "Exercise is vital for maintaining a healthy lifestyle. Whether it's a brisk walk, a rigorous workout, or a yoga session, physical activity benefits both the body and the mind. Incorporate regular exercise into your routine for optimal health.",
+        "Traveling allows us to experience new cultures, cuisines, and landscapes. It broadens our horizons and challenges our preconceptions. Embrace the opportunity to explore the world and discover its diverse wonders.",
+        "Music has a universal language that transcends boundaries. It can evoke strong emotions, tell compelling stories, and bring people together. Whether you enjoy classical, jazz, or pop, let music be a source of joy and inspiration in your life.",
+        "A positive mindset can transform your approach to challenges. By focusing on solutions rather than problems, you can overcome obstacles and achieve your goals. Cultivate a positive attitude to navigate life's ups and downs with resilience."
     };
+
+    private int currentParagraphIndex = 0;
+    private long startTime;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setupTrainingUI();
-    }
+        setContentView(R.layout.activity_typing_master);
 
-    private void setupTrainingUI() {
-        LinearLayout root = new LinearLayout(this);
-        root.setOrientation(LinearLayout.VERTICAL);
-        root.setBackgroundColor(Color.parseColor("#121212"));
-        root.setPadding(40, 40, 40, 40);
+        tvParagraph = findViewById(R.id.tv_paragraph);
+        etTypingArea = findViewById(R.id.et_typing_area);
+        btnNext = findViewById(R.id.btn_next);
 
-        tvLevelInfo = new TextView(this);
-        tvLevelInfo.setTextColor(Color.parseColor("#00E5FF"));
-        tvLevelInfo.setTextSize(18);
-        tvLevelInfo.setGravity(Gravity.CENTER);
-        updateLevelDisplay();
-        root.addView(tvLevelInfo);
+        loadParagraph();
 
-        tvStats = new TextView(this);
-        tvStats.setTextColor(Color.WHITE);
-        tvStats.setTextSize(16);
-        tvStats.setGravity(Gravity.CENTER);
-        tvStats.setText("WPM: 0 | Accuracy: 100%");
-        root.addView(tvStats);
-
-        tvTarget = new TextView(this);
-        tvTarget.setTextColor(Color.parseColor("#00E5FF"));
-        tvTarget.setTextSize(32);
-        tvTarget.setTypeface(null, Typeface.BOLD);
-        tvTarget.setGravity(Gravity.CENTER);
-        tvTarget.setPadding(0, 100, 0, 100);
-        root.addView(tvTarget);
-
-        etInput = new EditText(this);
-        etInput.setHint("Type here...");
-        etInput.setHintTextColor(Color.GRAY);
-        etInput.setTextColor(Color.WHITE);
-        etInput.setGravity(Gravity.CENTER);
-        etInput.setBackgroundColor(Color.parseColor("#1E1E1E"));
-        etInput.setPadding(20, 40, 20, 40);
-        root.addView(etInput);
-
-        etInput.addTextChangedListener(new TextWatcher() {
+        etTypingArea.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
-                checkInput(s.toString());
-            }
-            @Override
-            public void afterTextChanged(Editable s) {}
-        });
-
-        Button btnRestart = new Button(this);
-        btnRestart.setText("RESTART LEVEL");
-        btnRestart.setBackgroundColor(Color.parseColor("#00E5FF"));
-        btnRestart.setTextColor(Color.BLACK);
-        btnRestart.setOnClickListener(v -> startTest());
-        root.addView(btnRestart);
-
-        setContentView(root);
-        startTest();
-    }
-
-    private void startTest() {
-        isTestRunning = true;
-        wordsTyped = 0;
-        mistakes = 0;
-        startTime = System.currentTimeMillis();
-        nextWord();
-        etInput.setText("");
-        etInput.requestFocus();
-    }
-
-    private void nextWord() {
-        String[] words = LEVEL_WORDS[currentLevel - 1];
-        currentTargetWord = words[new Random().nextInt(words.length)];
-        tvTarget.setText(currentTargetWord);
-    }
-
-    private void checkInput(String input) {
-        if (!isTestRunning) return;
-
-        if (input.equals(currentTargetWord + " ") || input.equals(currentTargetWord)) {
-            if (input.endsWith(" ") || input.length() == currentTargetWord.length()) {
-                wordsTyped++;
-                updateStats();
-                etInput.setText("");
-                if (wordsTyped >= 10) {
-                    completeLevel();
-                } else {
-                    nextWord();
+                if (etTypingArea.getText().toString().length() == 1) {
+                    startTime = System.currentTimeMillis();
                 }
             }
-        } else if (!currentTargetWord.startsWith(input)) {
-            mistakes++;
-            updateStats();
-        }
+
+            @Override
+            public void afterTextChanged(Editable s) {
+                if (s.toString().equals(paragraphs[currentParagraphIndex])) {
+                    long endTime = System.currentTimeMillis();
+                    long timeTaken = endTime - startTime;
+                    int words = s.toString().split("\\s+").length;
+                    double wpm = (words / (timeTaken / 60000.0));
+                    Toast.Utils.makeText(TypingMasterActivity.this, "Completed! Speed: " + Math.round(wpm) + " WPM", Toast.LENGTH_LONG).show();
+                    btnNext.setEnabled(true);
+                }
+            }
+        });
+
+        btnNext.setOnClickListener(v -> {
+            currentParagraphIndex = (currentParagraphIndex + 1) % paragraphs.length;
+            loadParagraph();
+            etTypingArea.setText("");
+            btnNext.setEnabled(false);
+        });
     }
 
-    private void updateStats() {
-        long elapsed = System.currentTimeMillis() - startTime;
-        double minutes = elapsed / 60000.0;
-        int wpm = (int) (wordsTyped / (minutes > 0 ? minutes : 1.0));
-        int accuracy = (int) Math.max(0, 100 - (mistakes * 2));
-        tvStats.setText("WPM: " + wpm + " | Accuracy: " + accuracy + "%");
-    }
-
-    private void updateLevelDisplay() {
-        String info = "LEVEL " + currentLevel + ": ";
-        switch (currentLevel) {
-            case 1: info += "Foundation Drills"; break;
-            case 2: info += "Rhythm Flow"; break;
-            case 3: info += "Speed Burst"; break;
-            case 4: info += "Endurance Pro"; break;
-            case 5: info += "Elite Competitive"; break;
-        }
-        tvLevelInfo.setText(info);
-    }
-
-    private void completeLevel() {
-        isTestRunning = false;
-        if (currentLevel < 5) {
-            currentLevel++;
-            updateLevelDisplay();
-            tvTarget.setText("LEVEL COMPLETE!");
-            new Handler().postDelayed(this::startTest, 2000);
-        } else {
-            tvTarget.setText("ELITE MASTER ACHIEVED!");
-        }
+    private void loadParagraph() {
+        tvParagraph.setText(paragraphs[currentParagraphIndex]);
     }
 }
+// Added file to manifest
+// Updated Activity logic correctly

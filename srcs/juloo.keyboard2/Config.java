@@ -135,12 +135,12 @@ public final class Config
     {
       if ("landscape".equals(show_numpad_s))
         show_numpad = true;
-      keyboardHeightPercent = _prefs.getInt(foldable_unfolded ? "keyboard_height_landscape_unfolded" : "keyboard_height_landscape", 50);
+      keyboardHeightPercent = _prefs.getInt(foldable_unfolded ? "keyboard_height_landscape_unfolded" : "keyboard_height_landscape", 36);
       characterSizeScale = 1.25f;
     }
     else
     {
-      keyboardHeightPercent = _prefs.getInt(foldable_unfolded ? "keyboard_height_unfolded" : "keyboard_height", 35);
+      keyboardHeightPercent = _prefs.getInt(foldable_unfolded ? "keyboard_height_unfolded" : "keyboard_height", 24);
     }
     layouts = LayoutsPreference.load_from_preferences(res, _prefs);
     inverse_numpad = _prefs.getString("numpad_layout", "default").equals("low_first");
