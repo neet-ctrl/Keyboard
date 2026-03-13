@@ -2,11 +2,14 @@ package juloo.keyboard2;
 
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.app.DatePickerDialog;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.*;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
 
 public class ClipboardHistoryActivity extends Activity {
@@ -58,42 +61,28 @@ public class ClipboardHistoryActivity extends Activity {
 
             View btnAdd = findViewById(R.id.btn_add_new);
             if (btnAdd != null) btnAdd.setOnClickListener(v -> showAddDialog());
-            
+
+            View btnBulkDelete = findViewById(R.id.btn_bulk_delete);
+            if (btnBulkDelete != null) btnBulkDelete.setOnClickListener(v -> showBulkDeleteDialog());
+
             View btnExport = findViewById(R.id.btn_export_history);
             if (btnExport != null) btnExport.setOnClickListener(v -> exportHistory());
-            
+
             View btnClear = findViewById(R.id.btn_clear_all);
             if (btnClear != null) {
                 btnClear.setOnClickListener(v -> {
                     new AlertDialog.Builder(this)
-                        .setTitle("Clear History")
-                        .setMessage("Are you sure you want to delete all clips?")
-                        .setPositiveButton("Yes", (d, w) -> {
+                        .setTitle("Clear All History")
+                        .setMessage("Are you sure you want to delete ALL clips? This cannot be undone.")
+                        .setPositiveButton("Delete All", (d, w) -> {
                             service.clear_history();
                             updateList();
+                            Toast.makeText(this, "All history cleared.", Toast.LENGTH_SHORT).show();
                         })
-                        .setNegativeButton("No", null)
+                        .setNegativeButton("Cancel", null)
                         .show();
                 });
             }
-
-            // Copy All Clips Button
-            Button btnCopyAll = new Button(this);
-            btnCopyAll.setText("Copy All");
-            btnCopyAll.setOnClickListener(v -> {
-                List<ClipboardHistoryService.HistoryEntry> entries = service.get_history_entries();
-                if (entries.isEmpty()) return;
-                StringBuilder sb = new StringBuilder();
-                for (ClipboardHistoryService.HistoryEntry e : entries) {
-                    sb.append(e.content).append("\n---\n");
-                }
-                android.content.ClipboardManager cm = (android.content.ClipboardManager)getSystemService(android.content.Context.CLIPBOARD_SERVICE);
-                if (cm != null) {
-                    cm.setPrimaryClip(android.content.ClipData.newPlainText("All Clips", sb.toString()));
-                    Toast.makeText(this, "All clips copied!", Toast.LENGTH_SHORT).show();
-                }
-            });
-            ((ViewGroup)findViewById(R.id.btn_clear_all).getParent()).addView(btnCopyAll, 1);
             
         } catch (Throwable t) {
             // Catching Throwable to include Errors and RuntimeExceptions
@@ -372,6 +361,212 @@ public class ClipboardHistoryActivity extends Activity {
         intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
         startActivity(Intent.createChooser(intent, "Download/Export Note"));
     }
+
+    // ─────────────────────────────────────────────
+    //  BULK DELETE
+    // ─────────────────────────────────────────────
+
+    private void showBulkDeleteDialog() {
+        final String[] options = {
+            "Last 10 entries",
+            "Last 20 entries",
+            "Last 50 entries",
+            "Last 100 entries",
+            "Custom number…",
+            "Before a specific date…",
+            "Date range (from → to)…",
+            "Today's entries",
+            "This week's entries",
+            "This month's entries"
+        };
+
+        new AlertDialog.Builder(this)
+            .setTitle("Bulk Delete — Choose Option")
+            .setItems(options, (dialog, which) -> {
+                switch (which) {
+                    case 0: confirmAndDeleteLastN(10);  break;
+                    case 1: confirmAndDeleteLastN(20);  break;
+                    case 2: confirmAndDeleteLastN(50);  break;
+                    case 3: confirmAndDeleteLastN(100); break;
+                    case 4: showCustomNumberDialog();   break;
+                    case 5: showDeleteBeforeDatePicker(); break;
+                    case 6: showDateRangePicker();      break;
+                    case 7: deleteForPeriod("today");   break;
+                    case 8: deleteForPeriod("week");    break;
+                    case 9: deleteForPeriod("month");   break;
+                }
+            })
+            .setNegativeButton("Cancel", null)
+            .show();
+    }
+
+    /** Ask the user for a custom number then delete. */
+    private void showCustomNumberDialog() {
+        EditText input = new EditText(this);
+        input.setHint("e.g. 35");
+        input.setInputType(android.text.InputType.TYPE_CLASS_NUMBER);
+        input.setPadding(48, 24, 48, 24);
+
+        new AlertDialog.Builder(this)
+            .setTitle("Delete Last N Entries")
+            .setMessage("Enter the number of recent entries to delete:")
+            .setView(input)
+            .setPositiveButton("Delete", (d, w) -> {
+                String raw = input.getText().toString().trim();
+                if (raw.isEmpty()) return;
+                try {
+                    int n = Integer.parseInt(raw);
+                    if (n <= 0) { Toast.makeText(this, "Please enter a number greater than 0.", Toast.LENGTH_SHORT).show(); return; }
+                    confirmAndDeleteLastN(n);
+                } catch (NumberFormatException e) {
+                    Toast.makeText(this, "Invalid number.", Toast.LENGTH_SHORT).show();
+                }
+            })
+            .setNegativeButton("Cancel", null)
+            .show();
+    }
+
+    /** Confirm then delete the newest [n] entries. */
+    private void confirmAndDeleteLastN(int n) {
+        int total = service.get_history_entries().size();
+        int actual = Math.min(n, total);
+        new AlertDialog.Builder(this)
+            .setTitle("Confirm Bulk Delete")
+            .setMessage("Delete the " + actual + " most recent entr" + (actual == 1 ? "y" : "ies") + "?\n(" + total + " total in history)")
+            .setPositiveButton("Delete", (d, w) -> {
+                int removed = service.remove_last_n_entries(n);
+                updateList();
+                Toast.makeText(this, removed + " entr" + (removed == 1 ? "y" : "ies") + " deleted.", Toast.LENGTH_SHORT).show();
+            })
+            .setNegativeButton("Cancel", null)
+            .show();
+    }
+
+    /** Show a date picker; deletes all entries BEFORE the chosen date. */
+    private void showDeleteBeforeDatePicker() {
+        Calendar cal = Calendar.getInstance();
+        DatePickerDialog dpd = new DatePickerDialog(this,
+            (view, year, month, day) -> {
+                Calendar cutoffCal = Calendar.getInstance();
+                cutoffCal.set(year, month, day, 0, 0, 0);
+                cutoffCal.set(Calendar.MILLISECOND, 0);
+                Date cutoff = cutoffCal.getTime();
+                String dateStr = year + "-" + String.format("%02d", month + 1) + "-" + String.format("%02d", day);
+                new AlertDialog.Builder(this)
+                    .setTitle("Confirm Delete Before Date")
+                    .setMessage("Delete all entries before " + dateStr + "?")
+                    .setPositiveButton("Delete", (d, w) -> {
+                        int removed = service.remove_entries_before_date(cutoff);
+                        updateList();
+                        Toast.makeText(this, removed + " entr" + (removed == 1 ? "y" : "ies") + " deleted.", Toast.LENGTH_SHORT).show();
+                    })
+                    .setNegativeButton("Cancel", null)
+                    .show();
+            },
+            cal.get(Calendar.YEAR), cal.get(Calendar.MONTH), cal.get(Calendar.DAY_OF_MONTH));
+        dpd.setTitle("Delete entries BEFORE this date");
+        dpd.show();
+    }
+
+    /** Two-step date picker: pick FROM date, then TO date, then delete the range. */
+    private void showDateRangePicker() {
+        final Calendar now = Calendar.getInstance();
+        // Step 1: pick FROM date
+        DatePickerDialog fromPicker = new DatePickerDialog(this,
+            (view, fromYear, fromMonth, fromDay) -> {
+                Calendar fromCal = Calendar.getInstance();
+                fromCal.set(fromYear, fromMonth, fromDay, 0, 0, 0);
+                fromCal.set(Calendar.MILLISECOND, 0);
+                final Date fromDate = fromCal.getTime();
+                final String fromStr = fromYear + "-" + String.format("%02d", fromMonth + 1) + "-" + String.format("%02d", fromDay);
+
+                // Step 2: pick TO date
+                DatePickerDialog toPicker = new DatePickerDialog(this,
+                    (view2, toYear, toMonth, toDay) -> {
+                        Calendar toCal = Calendar.getInstance();
+                        toCal.set(toYear, toMonth, toDay, 23, 59, 59);
+                        toCal.set(Calendar.MILLISECOND, 999);
+                        final Date toDate = toCal.getTime();
+                        final String toStr = toYear + "-" + String.format("%02d", toMonth + 1) + "-" + String.format("%02d", toDay);
+
+                        if (fromDate.after(toDate)) {
+                            Toast.makeText(this, "FROM date must be before TO date.", Toast.LENGTH_SHORT).show();
+                            return;
+                        }
+                        new AlertDialog.Builder(this)
+                            .setTitle("Confirm Delete Range")
+                            .setMessage("Delete all entries from " + fromStr + " to " + toStr + " (inclusive)?")
+                            .setPositiveButton("Delete", (d, w) -> {
+                                int removed = service.remove_entries_in_range(fromDate, toDate);
+                                updateList();
+                                Toast.makeText(this, removed + " entr" + (removed == 1 ? "y" : "ies") + " deleted.", Toast.LENGTH_SHORT).show();
+                            })
+                            .setNegativeButton("Cancel", null)
+                            .show();
+                    },
+                    now.get(Calendar.YEAR), now.get(Calendar.MONTH), now.get(Calendar.DAY_OF_MONTH));
+                toPicker.setTitle("Select TO date (end of range)");
+                toPicker.show();
+            },
+            now.get(Calendar.YEAR), now.get(Calendar.MONTH), now.get(Calendar.DAY_OF_MONTH));
+        fromPicker.setTitle("Select FROM date (start of range)");
+        fromPicker.show();
+    }
+
+    /** Delete entries for "today", "week", or "month". */
+    private void deleteForPeriod(String period) {
+        Calendar from = Calendar.getInstance();
+        Calendar to   = Calendar.getInstance();
+
+        switch (period) {
+            case "today":
+                from.set(Calendar.HOUR_OF_DAY, 0);
+                from.set(Calendar.MINUTE, 0);
+                from.set(Calendar.SECOND, 0);
+                from.set(Calendar.MILLISECOND, 0);
+                to.set(Calendar.HOUR_OF_DAY, 23);
+                to.set(Calendar.MINUTE, 59);
+                to.set(Calendar.SECOND, 59);
+                to.set(Calendar.MILLISECOND, 999);
+                break;
+            case "week":
+                from.set(Calendar.DAY_OF_WEEK, from.getFirstDayOfWeek());
+                from.set(Calendar.HOUR_OF_DAY, 0);
+                from.set(Calendar.MINUTE, 0);
+                from.set(Calendar.SECOND, 0);
+                from.set(Calendar.MILLISECOND, 0);
+                to.set(Calendar.HOUR_OF_DAY, 23);
+                to.set(Calendar.MINUTE, 59);
+                to.set(Calendar.SECOND, 59);
+                to.set(Calendar.MILLISECOND, 999);
+                break;
+            case "month":
+                from.set(Calendar.DAY_OF_MONTH, 1);
+                from.set(Calendar.HOUR_OF_DAY, 0);
+                from.set(Calendar.MINUTE, 0);
+                from.set(Calendar.SECOND, 0);
+                from.set(Calendar.MILLISECOND, 0);
+                to.set(Calendar.HOUR_OF_DAY, 23);
+                to.set(Calendar.MINUTE, 59);
+                to.set(Calendar.SECOND, 59);
+                to.set(Calendar.MILLISECOND, 999);
+                break;
+        }
+
+        String label = period.equals("today") ? "Today" : period.equals("week") ? "This Week" : "This Month";
+        new AlertDialog.Builder(this)
+            .setTitle("Confirm Delete — " + label)
+            .setMessage("Delete all clipboard entries from " + label.toLowerCase() + "?")
+            .setPositiveButton("Delete", (d, w) -> {
+                int removed = service.remove_entries_in_range(from.getTime(), to.getTime());
+                updateList();
+                Toast.makeText(this, removed + " entr" + (removed == 1 ? "y" : "ies") + " deleted.", Toast.LENGTH_SHORT).show();
+            })
+            .setNegativeButton("Cancel", null)
+            .show();
+    }
+
+    // ─────────────────────────────────────────────
 
     private void exportHistory() {
         List<ClipboardHistoryService.HistoryEntry> history = service.get_history_entries();

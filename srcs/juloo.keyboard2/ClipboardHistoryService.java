@@ -121,6 +121,75 @@ public final class ClipboardHistoryService
     return dst;
   }
 
+  /**
+   * Remove the newest [n] entries from history (index 0 = newest).
+   * Returns the number of entries actually removed.
+   */
+  public synchronized int remove_last_n_entries(int n) {
+    int toRemove = Math.min(n, _history.size());
+    for (int i = 0; i < toRemove; i++) {
+      _history.remove(0);
+    }
+    if (toRemove > 0) {
+      save_history_to_prefs(juloo.keyboard2.Config.globalConfig().getContext());
+      if (_listener != null) _listener.on_clipboard_history_change();
+    }
+    return toRemove;
+  }
+
+  /**
+   * Remove all entries whose timestamp is strictly before [cutoff].
+   * Timestamps are stored as "yyyy-MM-dd HH:mm:ss".
+   * Returns the number of entries removed.
+   */
+  public synchronized int remove_entries_before_date(java.util.Date cutoff) {
+    java.text.SimpleDateFormat sdf =
+        new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss", java.util.Locale.getDefault());
+    int removed = 0;
+    java.util.Iterator<HistoryEntry> it = _history.iterator();
+    while (it.hasNext()) {
+      HistoryEntry entry = it.next();
+      try {
+        java.util.Date entryDate = sdf.parse(entry.timestamp);
+        if (entryDate != null && entryDate.before(cutoff)) {
+          it.remove();
+          removed++;
+        }
+      } catch (Exception ignored) {}
+    }
+    if (removed > 0) {
+      save_history_to_prefs(juloo.keyboard2.Config.globalConfig().getContext());
+      if (_listener != null) _listener.on_clipboard_history_change();
+    }
+    return removed;
+  }
+
+  /**
+   * Remove all entries whose timestamp falls within [from, to] (inclusive).
+   * Returns the number of entries removed.
+   */
+  public synchronized int remove_entries_in_range(java.util.Date from, java.util.Date to) {
+    java.text.SimpleDateFormat sdf =
+        new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss", java.util.Locale.getDefault());
+    int removed = 0;
+    java.util.Iterator<HistoryEntry> it = _history.iterator();
+    while (it.hasNext()) {
+      HistoryEntry entry = it.next();
+      try {
+        java.util.Date entryDate = sdf.parse(entry.timestamp);
+        if (entryDate != null && !entryDate.before(from) && !entryDate.after(to)) {
+          it.remove();
+          removed++;
+        }
+      } catch (Exception ignored) {}
+    }
+    if (removed > 0) {
+      save_history_to_prefs(juloo.keyboard2.Config.globalConfig().getContext());
+      if (_listener != null) _listener.on_clipboard_history_change();
+    }
+    return removed;
+  }
+
   public synchronized void remove_history_entry(String clip)
   {
     int last_pos = _history.size() - 1;

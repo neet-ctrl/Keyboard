@@ -25,27 +25,46 @@
         android:layout_weight="1"
         android:divider="@android:color/darker_gray"
         android:dividerHeight="1dp" />
-    <RelativeLayout
+    <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content">
-        <Button
-            android:id="@+id/btn_clear_all"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_centerHorizontal="true"
-            android:text="Clear All"
-            android:textColor="#FF0000" />
-        <Button
-            android:id="@+id/btn_export_history"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_alignParentEnd="true"
-            android:text="Export All" />
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center"
+        android:paddingTop="4dp">
+
         <Button
             android:id="@+id/btn_add_new"
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_alignParentStart="true"
-            android:text="+" />
-    </RelativeLayout>
+            android:layout_weight="1"
+            android:text="+"
+            android:textSize="18sp" />
+
+        <Button
+            android:id="@+id/btn_bulk_delete"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Bulk Delete"
+            android:textColor="#FF6600"
+            android:textSize="13sp" />
+
+        <Button
+            android:id="@+id/btn_clear_all"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Clear All"
+            android:textColor="#FF0000"
+            android:textSize="13sp" />
+
+        <Button
+            android:id="@+id/btn_export_history"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Export"
+            android:textSize="13sp" />
+
+    </LinearLayout>
 </LinearLayout>
