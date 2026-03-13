@@ -122,6 +122,41 @@ public final class ClipboardHistoryService
   }
 
   /**
+   * Remove the OLDEST [n] entries from history (tail of the list, since index 0 = newest).
+   * Returns the number of entries actually removed.
+   */
+  public synchronized int remove_oldest_n_entries(int n) {
+    int size = _history.size();
+    int toRemove = Math.min(n, size);
+    for (int i = 0; i < toRemove; i++) {
+      _history.remove(_history.size() - 1);
+    }
+    if (toRemove > 0) {
+      save_history_to_prefs(juloo.keyboard2.Config.globalConfig().getContext());
+      if (_listener != null) _listener.on_clipboard_history_change();
+    }
+    return toRemove;
+  }
+
+  /**
+   * Batch-import a list of HistoryEntry objects, appending them to the END of history.
+   * Saves to prefs only ONCE after all entries are added (efficient for large restores).
+   * Skips duplicate content already present in history.
+   */
+  public synchronized void import_history_batch(List<HistoryEntry> entries) {
+    java.util.Set<String> existing = new java.util.HashSet<>();
+    for (HistoryEntry e : _history) existing.add(e.content);
+    for (HistoryEntry e : entries) {
+      if (!existing.contains(e.content)) {
+        _history.add(e);
+        existing.add(e.content);
+      }
+    }
+    save_history_to_prefs(juloo.keyboard2.Config.globalConfig().getContext());
+    if (_listener != null) _listener.on_clipboard_history_change();
+  }
+
+  /**
    * Remove the newest [n] entries from history (index 0 = newest).
    * Returns the number of entries actually removed.
    */

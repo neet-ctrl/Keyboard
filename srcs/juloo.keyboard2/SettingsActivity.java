@@ -14,6 +14,8 @@ import android.net.Uri;
 
 public class SettingsActivity extends PreferenceActivity
 {
+  private static final int REQUEST_RESTORE_FILE = 1001;
+
   @Override
   public void onCreate(Bundle savedInstanceState)
   {
@@ -45,37 +47,42 @@ public class SettingsActivity extends PreferenceActivity
         return true;
     });
 
+    // ── BACKUP ────────────────────────────────────────────────────────────────
+    // Writes JSON to a file and shares the file URI.
+    // This avoids TransactionTooLargeException that occurs when passing large
+    // strings via Intent.EXTRA_TEXT — supports infinite clip counts.
     findPreference("backup_data").setOnPreferenceClickListener(p -> {
-        String backup = BackupRestoreSystem.createBackup(this);
-        if (backup != null) {
-            Intent sendIntent = new Intent();
-            sendIntent.setAction(Intent.ACTION_SEND);
-            sendIntent.putExtra(Intent.EXTRA_TEXT, backup);
-            sendIntent.setType("text/plain");
-            startActivity(Intent.createChooser(sendIntent, getString(R.string.pref_backup_title)));
-            Toast.makeText(this, R.string.backup_success, Toast.LENGTH_SHORT).show();
+        java.io.File backupFile = BackupRestoreSystem.createBackupFile(this);
+        if (backupFile != null) {
+            try {
+                Uri fileUri = androidx.core.content.FileProvider.getUriForFile(
+                    this, "juloo.keyboard2.provider", backupFile);
+                Intent shareIntent = new Intent(Intent.ACTION_SEND);
+                shareIntent.setType("application/json");
+                shareIntent.putExtra(Intent.EXTRA_STREAM, fileUri);
+                shareIntent.putExtra(Intent.EXTRA_SUBJECT, "Keyboard Backup");
+                shareIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                startActivity(Intent.createChooser(shareIntent, getString(R.string.pref_backup_title)));
+                Toast.makeText(this, R.string.backup_success, Toast.LENGTH_SHORT).show();
+            } catch (Exception e) {
+                Toast.makeText(this, "Backup failed: " + e.getMessage(), Toast.LENGTH_LONG).show();
+            }
+        } else {
+            Toast.makeText(this, "Could not create backup file.", Toast.LENGTH_SHORT).show();
         }
         return true;
     });
 
+    // ── RESTORE ───────────────────────────────────────────────────────────────
+    // Launches the system file picker so the user selects their backup .json
+    // file directly — no size limit, works for any number of clips.
     findPreference("restore_data").setOnPreferenceClickListener(p -> {
-        // In a real app we'd use a file picker, but to keep it simple and within Replit constraints
-        // we'll use a dialog to paste the backup string or just show how it would be done.
-        android.app.AlertDialog.Builder builder = new android.app.AlertDialog.Builder(this);
-        builder.setTitle(R.string.pref_restore_title);
-        final android.widget.EditText input = new android.widget.EditText(this);
-        builder.setView(input);
-        builder.setPositiveButton("Restore", (dialog, which) -> {
-            if (BackupRestoreSystem.restoreBackup(this, input.getText().toString())) {
-                Toast.makeText(this, R.string.restore_success, Toast.LENGTH_LONG).show();
-                // Refresh activity to reflect changes
-                recreate();
-            } else {
-                Toast.makeText(this, R.string.restore_failed, Toast.LENGTH_SHORT).show();
-            }
-        });
-        builder.setNegativeButton("Cancel", (dialog, which) -> dialog.cancel());
-        builder.show();
+        Intent pickIntent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+        pickIntent.addCategory(Intent.CATEGORY_OPENABLE);
+        pickIntent.setType("*/*");
+        startActivityForResult(
+            Intent.createChooser(pickIntent, getString(R.string.pref_restore_title)),
+            REQUEST_RESTORE_FILE);
         return true;
     });
 
@@ -88,9 +95,26 @@ public class SettingsActivity extends PreferenceActivity
     findPreference("keyboard_height_landscape_unfolded").setEnabled(foldableDevice);
   }
 
+  @Override
+  protected void onActivityResult(int requestCode, int resultCode, Intent data)
+  {
+    super.onActivityResult(requestCode, resultCode, data);
+    if (requestCode == REQUEST_RESTORE_FILE && resultCode == RESULT_OK && data != null) {
+      Uri uri = data.getData();
+      if (uri != null) {
+        boolean ok = BackupRestoreSystem.restoreBackupFromUri(this, uri);
+        if (ok) {
+          Toast.makeText(this, R.string.restore_success, Toast.LENGTH_LONG).show();
+          recreate();
+        } else {
+          Toast.makeText(this, R.string.restore_failed, Toast.LENGTH_SHORT).show();
+        }
+      }
+    }
+  }
+
   void fallbackEncrypted()
   {
-    // Can't communicate with the user here.
     finish();
   }
 

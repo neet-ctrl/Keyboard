@@ -368,56 +368,64 @@ public class ClipboardHistoryActivity extends Activity {
 
     private void showBulkDeleteDialog() {
         final String[] options = {
-            "Last 10 entries",
-            "Last 20 entries",
-            "Last 50 entries",
-            "Last 100 entries",
-            "Custom number…",
-            "Before a specific date…",
-            "Date range (from → to)…",
-            "Today's entries",
-            "This week's entries",
-            "This month's entries"
+            "🕐  Last 10 newest entries",
+            "🕑  Last 20 newest entries",
+            "🕒  Last 50 newest entries",
+            "🕓  Last 100 newest entries",
+            "🔢  Custom number (newest)…",
+            "⏳  Remove N oldest entries…",
+            "📅  Before a specific date…",
+            "📆  Date range (from → to)…",
+            "☀️  Today's entries",
+            "📅  This week's entries",
+            "🗓  This month's entries"
         };
 
         new AlertDialog.Builder(this)
             .setTitle("Bulk Delete — Choose Option")
             .setItems(options, (dialog, which) -> {
                 switch (which) {
-                    case 0: confirmAndDeleteLastN(10);  break;
-                    case 1: confirmAndDeleteLastN(20);  break;
-                    case 2: confirmAndDeleteLastN(50);  break;
-                    case 3: confirmAndDeleteLastN(100); break;
-                    case 4: showCustomNumberDialog();   break;
-                    case 5: showDeleteBeforeDatePicker(); break;
-                    case 6: showDateRangePicker();      break;
-                    case 7: deleteForPeriod("today");   break;
-                    case 8: deleteForPeriod("week");    break;
-                    case 9: deleteForPeriod("month");   break;
+                    case 0:  confirmAndDeleteLastN(10);         break;
+                    case 1:  confirmAndDeleteLastN(20);         break;
+                    case 2:  confirmAndDeleteLastN(50);         break;
+                    case 3:  confirmAndDeleteLastN(100);        break;
+                    case 4:  showCustomNumberDialog(false);     break;
+                    case 5:  showCustomNumberDialog(true);      break;
+                    case 6:  showDeleteBeforeDatePicker();      break;
+                    case 7:  showDateRangePicker();             break;
+                    case 8:  deleteForPeriod("today");          break;
+                    case 9:  deleteForPeriod("week");           break;
+                    case 10: deleteForPeriod("month");          break;
                 }
             })
             .setNegativeButton("Cancel", null)
             .show();
     }
 
-    /** Ask the user for a custom number then delete. */
-    private void showCustomNumberDialog() {
+    /**
+     * Ask the user for a custom number.
+     * oldest=false → delete the N newest entries
+     * oldest=true  → delete the N oldest entries
+     */
+    private void showCustomNumberDialog(boolean oldest) {
         EditText input = new EditText(this);
         input.setHint("e.g. 35");
         input.setInputType(android.text.InputType.TYPE_CLASS_NUMBER);
         input.setPadding(48, 24, 48, 24);
 
+        String which = oldest ? "oldest" : "most recent";
         new AlertDialog.Builder(this)
-            .setTitle("Delete Last N Entries")
-            .setMessage("Enter the number of recent entries to delete:")
+            .setTitle("Delete N " + (oldest ? "Oldest" : "Newest") + " Entries")
+            .setMessage("Enter how many " + which + " entries to delete:")
             .setView(input)
             .setPositiveButton("Delete", (d, w) -> {
                 String raw = input.getText().toString().trim();
                 if (raw.isEmpty()) return;
                 try {
                     int n = Integer.parseInt(raw);
-                    if (n <= 0) { Toast.makeText(this, "Please enter a number greater than 0.", Toast.LENGTH_SHORT).show(); return; }
-                    confirmAndDeleteLastN(n);
+                    if (n <= 0) { Toast.makeText(this, "Enter a number greater than 0.", Toast.LENGTH_SHORT).show(); return; }
+                    if (oldest) confirmAndDeleteOldestN(n);
+                    else        confirmAndDeleteLastN(n);
                 } catch (NumberFormatException e) {
                     Toast.makeText(this, "Invalid number.", Toast.LENGTH_SHORT).show();
                 }
@@ -426,17 +434,33 @@ public class ClipboardHistoryActivity extends Activity {
             .show();
     }
 
-    /** Confirm then delete the newest [n] entries. */
+    /** Confirm then delete the NEWEST [n] entries. */
     private void confirmAndDeleteLastN(int n) {
         int total = service.get_history_entries().size();
         int actual = Math.min(n, total);
         new AlertDialog.Builder(this)
-            .setTitle("Confirm Bulk Delete")
+            .setTitle("Confirm Delete Newest")
             .setMessage("Delete the " + actual + " most recent entr" + (actual == 1 ? "y" : "ies") + "?\n(" + total + " total in history)")
             .setPositiveButton("Delete", (d, w) -> {
                 int removed = service.remove_last_n_entries(n);
                 updateList();
                 Toast.makeText(this, removed + " entr" + (removed == 1 ? "y" : "ies") + " deleted.", Toast.LENGTH_SHORT).show();
+            })
+            .setNegativeButton("Cancel", null)
+            .show();
+    }
+
+    /** Confirm then delete the OLDEST [n] entries. */
+    private void confirmAndDeleteOldestN(int n) {
+        int total = service.get_history_entries().size();
+        int actual = Math.min(n, total);
+        new AlertDialog.Builder(this)
+            .setTitle("Confirm Delete Oldest")
+            .setMessage("Delete the " + actual + " oldest entr" + (actual == 1 ? "y" : "ies") + "?\n(" + total + " total in history)")
+            .setPositiveButton("Delete", (d, w) -> {
+                int removed = service.remove_oldest_n_entries(n);
+                updateList();
+                Toast.makeText(this, removed + " oldest entr" + (removed == 1 ? "y" : "ies") + " deleted.", Toast.LENGTH_SHORT).show();
             })
             .setNegativeButton("Cancel", null)
             .show();
