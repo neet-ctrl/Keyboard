@@ -1,0 +1,22 @@
+{
+  "name": "workspace",
+  "version": "1.0.0",
+  "description": "###### Web Progressive Application purposed for testing user typing speed and training user typing habits. Built using React, Node.js, and MangoDB.",
+  "main": "server.js",
+  "directories": {
+    "doc": "doc",
+    "test": "test"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "copy-paste": "^2.2.0",
+    "instatunnel": "^1.1.22",
+    "xclip": "^1.0.7"
+  }
+}

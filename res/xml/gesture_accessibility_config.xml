@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Configuration for the C-gesture clipboard accessibility service.
+    - No accessibility event types are needed (we use our own overlay).
+    - canRequestFilterKeyEvents is false — we don't intercept keys.
+    - Touch exploration is NOT required — the overlay handles touches itself.
+    - canPerformGestures is true so the service is allowed to show the overlay.
+-->
+<accessibility-service
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:accessibilityEventTypes="typeAllMask"
+    android:accessibilityFeedbackType="feedbackGeneric"
+    android:accessibilityFlags="flagDefault"
+    android:canRetrieveWindowContent="false"
+    android:canRequestFilterKeyEvents="false"
+    android:canPerformGestures="true"
+    android:description="@string/accessibility_gesture_description"
+    android:settingsActivity="juloo.keyboard2.SettingsActivity" />
