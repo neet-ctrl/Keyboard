@@ -117,10 +117,9 @@ public class GestureAccessibilityService extends AccessibilityService {
                 return true; // claim the touch — all MOVE/UP events follow
 
             case MotionEvent.ACTION_MOVE:
-                // Sample every point (getHistorySize helps on fast swipes)
-                for (int h = 0; h < ev.getHistorySize(); h++) {
-                    _points.add(new float[]{ev.getHistoricalRawX(h), ev.getHistoricalRawY(h)});
-                }
+                // getRawX/Y works on all API levels; historical raw coords need API 29+
+                // so we simply track the current position — the listener fires
+                // frequently enough to give us a dense path.
                 _points.add(new float[]{ev.getRawX(), ev.getRawY()});
                 return true;
 

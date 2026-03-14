@@ -1,0 +1,91 @@
+Skip to content
+Keyboard
+Repository navigation
+Code
+Issues
+Actions
+Make Apk CI
+upload #21
+Annotations
+1 error and 1 warning
+Build-Apk
+failed 8 minutes ago in 38s
+2s
+2s
+0s
+0s
+4s
+24s
+> Task :processDebugManifestForPackage
+> Task :checkDebugDuplicateClasses
+> Task :parseDebugLocalResources
+> Task :mergeLibDexDebug
+> Task :mergeDebugJniLibFolders
+> Task :mergeDebugNativeLibs NO-SOURCE
+> Task :stripDebugDebugSymbols NO-SOURCE
+> Task :validateSigningDebug
+> Task :writeDebugAppMetadata
+> Task :writeDebugSigningConfigVersions
+> Task :mergeDebugJavaResource
+> Task :desugarDebugFileDependencies
+> Task :mergeDebugResources
+> Task :processDebugResources
+> Task :mergeExtDexDebug
+
+> Task :compileDebugJavaWithJavac
+/home/runner/work/Keyboard/Keyboard/srcs/juloo.keyboard2/GestureAccessibilityService.java:122: error: cannot find symbol
+                    _points.add(new float[]{ev.getHistoricalRawX(h), ev.getHistoricalRawY(h)});
+                                              ^
+  symbol:   method getHistoricalRawX(int)
+  location: variable ev of type MotionEvent
+/home/runner/work/Keyboard/Keyboard/srcs/juloo.keyboard2/GestureAccessibilityService.java:122: error: cannot find symbol
+                    _points.add(new float[]{ev.getHistoricalRawX(h), ev.getHistoricalRawY(h)});
+                                                                       ^
+  symbol:   method getHistoricalRawY(int)
+  location: variable ev of type MotionEvent
+Note: Some input files use or override a deprecated API.
+Note: Recompile with -Xlint:deprecation for details.
+
+Note: Some input files use unchecked or unsafe operations.
+Note: Recompile with -Xlint:unchecked for details.
+2 errors
+> Task :compileDebugJavaWithJavac FAILED
+gradle/actions: Writing build results to /home/runner/work/_temp/.gradle-actions/build-results/__run_2-1773488289286.json
+
+[Incubating] Problems report is available at: file:///home/runner/work/Keyboard/Keyboard/build/reports/problems/problems-report.html
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Execution failed for task ':compileDebugJavaWithJavac'.
+> Compilation failed; see the compiler output below.
+  Note: Recompile with -Xlint:deprecation for details.
+  Note: Recompile with -Xlint:unchecked for details.
+  Note: Some input files use or override a deprecated API.
+  Note: Some input files use unchecked or unsafe operations.
+  /home/runner/work/Keyboard/Keyboard/srcs/juloo.keyboard2/GestureAccessibilityService.java:122: error: cannot find symbol
+                      _points.add(new float[]{ev.getHistoricalRawX(h), ev.getHistoricalRawY(h)});
+                                                ^
+    symbol:   method getHistoricalRawX(int)
+    location: variable ev of type MotionEvent
+  /home/runner/work/Keyboard/Keyboard/srcs/juloo.keyboard2/GestureAccessibilityService.java:122: error: cannot find symbol
+                      _points.add(new float[]{ev.getHistoricalRawX(h), ev.getHistoricalRawY(h)});
+                                                                         ^
+    symbol:   method getHistoricalRawY(int)
+    location: variable ev of type MotionEvent
+  2 errors
+
+* Try:
+> Check your code and dependencies to fix the compilation error(s)
+> Run with --scan to get full insights.
+
+BUILD FAILED in 23s
+32 actionable tasks: 32 executed
+Configuration cache entry stored.
+Error: Process completed with exit code 1.
+0s
+0s
+3s
+0s
+0s
+0s
